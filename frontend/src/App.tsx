@@ -1,3 +1,4 @@
+import React from 'react';
 import { ChakraProvider, CSSReset } from '@chakra-ui/react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -13,14 +14,15 @@ import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 import Marketplace from './pages/Marketplace';
 import Profile from './pages/Profile';
+import TopRatedItems from './pages/TopRatedItems';
 
 // Protected route wrapper
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 };
 
-function App() {
+const App: React.FC = () => {
   return (
     <ChakraProvider theme={theme}>
       <CSSReset />
@@ -63,6 +65,16 @@ function App() {
               }
             />
             <Route
+              path="/top-rated"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <TopRatedItems />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/profile"
               element={
                 <ProtectedRoute>
@@ -77,6 +89,6 @@ function App() {
       </AuthProvider>
     </ChakraProvider>
   );
-}
+};
 
 export default App; 

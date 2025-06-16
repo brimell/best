@@ -10,6 +10,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  token: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -28,12 +29,14 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
 
   useEffect(() => {
     // Check for stored token and validate it
-    const token = localStorage.getItem('token');
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    const storedToken = localStorage.getItem('token');
+    if (storedToken) {
+      setToken(storedToken);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
       // Validate token and get user info
       validateToken();
     }
@@ -59,9 +62,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
       });
 
-      const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      const { token: newToken, user } = response.data;
+      localStorage.setItem('token', newToken);
+      setToken(newToken);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
       setUser(user);
       setIsAuthenticated(true);
     } catch (error) {
@@ -80,9 +84,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
       });
 
-      const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      const { token: newToken, user } = response.data;
+      localStorage.setItem('token', newToken);
+      setToken(newToken);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
       setUser(user);
       setIsAuthenticated(true);
     } catch (error) {
@@ -95,6 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     localStorage.removeItem('token');
+    setToken(null);
     delete axios.defaults.headers.common['Authorization'];
     setUser(null);
     setIsAuthenticated(false);
@@ -103,6 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value = {
     user,
     isAuthenticated,
+    token,
     login,
     register,
     logout,
