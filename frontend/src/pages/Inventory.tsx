@@ -24,6 +24,15 @@ import {
     InputGroup,
     InputLeftElement,
     useDisclosure,
+    Card,
+    CardBody,
+    StatGroup,
+    Grid,
+    Stat,
+    StatLabel,
+    StatNumber,
+    StatHelpText,
+    StatArrow,
 } from '@chakra-ui/react';
 import { 
     AiOutlinePlus,
@@ -59,15 +68,31 @@ interface InventoryItem {
     price_point_category_id: number;
 }
 
+interface InventoryStats {
+    total_items: number;
+    total_new_value: number;
+    total_resell_value: number;
+    avg_want_rating: number;
+    avg_need_rating: number;
+}
+
 const Inventory: React.FC = () => {
     const [items, setItems] = useState<InventoryItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('');
     const [sortBy, setSortBy] = useState('name');
+    const [sortOrder, setSortOrder] = useState('DESC');
     const { token } = useAuth();
     const toast = useToast();
     const { isOpen, onOpen, onClose } = useDisclosure();
+    const [stats, setStats] = useState<InventoryStats>({
+        total_items: 0,
+        total_new_value: 0,
+        total_resell_value: 0,
+        avg_want_rating: 0,
+        avg_need_rating: 0
+    });
 
     useEffect(() => {
         fetchInventory();
@@ -75,7 +100,14 @@ const Inventory: React.FC = () => {
 
     const fetchInventory = async () => {
         try {
-            const response = await fetch('/api/inventory', {
+            const queryParams = new URLSearchParams({
+                search: searchTerm,
+                category_id: categoryFilter,
+                sort_by: sortBy,
+                sort_order: sortOrder
+            });
+
+            const response = await fetch(`/api/inventory?${queryParams}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -83,6 +115,30 @@ const Inventory: React.FC = () => {
             if (!response.ok) throw new Error('Failed to fetch inventory');
             const data = await response.json();
             setItems(data);
+
+            // Calculate stats
+            const stats = data.reduce((acc: InventoryStats, item: InventoryItem) => {
+                acc.total_items += 1;
+                acc.total_new_value += item.price;
+                acc.total_resell_value += item.price;
+                acc.avg_want_rating += item.average_rating || 0;
+                acc.avg_need_rating += item.average_rating || 0;
+                return acc;
+            }, {
+                total_items: 0,
+                total_new_value: 0,
+                total_resell_value: 0,
+                avg_want_rating: 0,
+                avg_need_rating: 0
+            });
+
+            // Calculate averages
+            if (data.length > 0) {
+                stats.avg_want_rating /= data.length;
+                stats.avg_need_rating /= data.length;
+            }
+
+            setStats(stats);
         } catch (error) {
             toast({
                 title: 'Error',
@@ -184,6 +240,56 @@ const Inventory: React.FC = () => {
 
     return (
         <Container maxW="container.xl" py={8}>
+            {/* Mini Dashboard */}
+            <Card mb={8}>
+                <CardBody>
+                    <StatGroup>
+                        <Grid templateColumns="repeat(5, 1fr)" gap={6} width="100%">
+                            <Stat>
+                                <StatLabel>Total Items</StatLabel>
+                                <StatNumber>{stats.total_items}</StatNumber>
+                                <StatHelpText>
+                                    <StatArrow type="increase" />
+                                    {items.length} unique items
+                                </StatHelpText>
+                            </Stat>
+
+                            <Stat>
+                                <StatLabel>Total New Value</StatLabel>
+                                <StatNumber>£{stats.total_new_value.toFixed(2)}</StatNumber>
+                                <StatHelpText>
+                                    Average: £{(stats.total_new_value / stats.total_items || 0).toFixed(2)}
+                                </StatHelpText>
+                            </Stat>
+
+                            <Stat>
+                                <StatLabel>Total Resell Value</StatLabel>
+                                <StatNumber>£{stats.total_resell_value.toFixed(2)}</StatNumber>
+                                <StatHelpText>
+                                    Average: £{(stats.total_resell_value / stats.total_items || 0).toFixed(2)}
+                                </StatHelpText>
+                            </Stat>
+
+                            <Stat>
+                                <StatLabel>Average Want Rating</StatLabel>
+                                <StatNumber>{stats.avg_want_rating.toFixed(1)}</StatNumber>
+                                <StatHelpText>
+                                    Out of 10
+                                </StatHelpText>
+                            </Stat>
+
+                            <Stat>
+                                <StatLabel>Average Need Rating</StatLabel>
+                                <StatNumber>{stats.avg_need_rating.toFixed(1)}</StatNumber>
+                                <StatHelpText>
+                                    Out of 10
+                                </StatHelpText>
+                            </Stat>
+                        </Grid>
+                    </StatGroup>
+                </CardBody>
+            </Card>
+
             <VStack spacing={8} align="stretch">
                 <Flex justify="space-between" align="center">
                     <Heading size="lg">My Inventory</Heading>
@@ -230,6 +336,11 @@ const Inventory: React.FC = () => {
                         <option value="price">Sort by Price</option>
                         <option value="rating">Sort by Rating</option>
                     </Select>
+                    <Button
+                        onClick={() => setSortOrder(prev => prev === 'ASC' ? 'DESC' : 'ASC')}
+                    >
+                        {sortOrder === 'ASC' ? '↑' : '↓'}
+                    </Button>
                 </HStack>
 
                 {loading ? (

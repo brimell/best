@@ -60,7 +60,9 @@ const App: React.FC = () => {
               path="/inventory"
               element={
                 <ProtectedRoute>
-                  <Inventory />
+                  <Layout>
+                    <Inventory />
+                  </Layout>
                 </ProtectedRoute>
               }
             />
@@ -68,7 +70,9 @@ const App: React.FC = () => {
               path="/marketplace"
               element={
                 <ProtectedRoute>
-                  <Marketplace />
+                  <Layout>
+                    <Marketplace />
+                  </Layout>
                 </ProtectedRoute>
               }
             />
