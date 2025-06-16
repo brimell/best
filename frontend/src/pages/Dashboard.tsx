@@ -103,15 +103,17 @@ const Dashboard: React.FC = () => {
                     </Box>
                 )}
                 <VStack align="start" spacing={1}>
-                    <StatLabel color="gray.600">{label}</StatLabel>
-                    <StatNumber fontSize="2xl" fontWeight="bold">
-                        {value}
-                    </StatNumber>
-                    {helpText && (
-                        <StatHelpText mb={0} color="gray.500">
-                            {helpText}
-                        </StatHelpText>
-                    )}
+                    <Stat>
+                        <StatLabel color="gray.600">{label}</StatLabel>
+                        <StatNumber fontSize="2xl" fontWeight="bold">
+                            {value}
+                        </StatNumber>
+                        {helpText && (
+                            <StatHelpText mb={0} color="gray.500">
+                                {helpText}
+                            </StatHelpText>
+                        )}
+                    </Stat>
                 </VStack>
             </HStack>
         </Box>
