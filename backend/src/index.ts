@@ -14,6 +14,7 @@ import categoryRoutes from './routes/categories';
 import marketplaceRoutes from './routes/marketplace';
 import transactionRoutes from './routes/transactions';
 import ratingRoutes from './routes/ratings';
+import dashboardRoutes from './routes/dashboard';
 
 dotenv.config();
 
@@ -45,6 +46,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/marketplace', marketplaceRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/ratings', ratingRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

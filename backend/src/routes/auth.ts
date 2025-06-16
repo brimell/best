@@ -2,6 +2,7 @@ import express from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import pool from '../config/database';
+import { authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -93,6 +94,30 @@ router.post('/login', async (req, res) => {
         });
     } catch (error) {
         console.error('Login error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Get current user info
+router.get('/me', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) {
+            return res.status(401).json({ message: 'User not authenticated' });
+        }
+
+        const result = await pool.query(
+            'SELECT id, username, email FROM users WHERE id = $1',
+            [userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json({ user: result.rows[0] });
+    } catch (error) {
+        console.error('Error fetching user info:', error);
         res.status(500).json({ message: 'Server error' });
     }
 });

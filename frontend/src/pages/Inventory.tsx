@@ -277,7 +277,7 @@ const Inventory: React.FC = () => {
                                     </HStack>
                                     <HStack>
                                         <Icon as={AiOutlineDollar} />
-                                        <Text fontWeight="bold">${item.price.toFixed(2)}</Text>
+                                        <Text fontWeight="bold">${(item.price ?? 0).toFixed(2)}</Text>
                                     </HStack>
                                     {item.average_rating > 0 && (
                                         <Rating
