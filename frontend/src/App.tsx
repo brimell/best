@@ -10,14 +10,14 @@ import Layout from './components/Layout';
 // Page components
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 import Marketplace from './pages/Marketplace';
 import Profile from './pages/Profile';
 import TopRatedItems from './pages/TopRatedItems';
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Protected route wrapper
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const ProtectedRouteComponent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -57,22 +57,10 @@ const App: React.FC = () => {
 
             {/* Protected routes */}
             <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <Dashboard />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/inventory"
               element={
                 <ProtectedRoute>
-                  <Layout>
-                    <Inventory />
-                  </Layout>
+                  <Inventory />
                 </ProtectedRoute>
               }
             />
@@ -80,9 +68,7 @@ const App: React.FC = () => {
               path="/marketplace"
               element={
                 <ProtectedRoute>
-                  <Layout>
-                    <Marketplace />
-                  </Layout>
+                  <Marketplace />
                 </ProtectedRoute>
               }
             />
@@ -106,6 +92,8 @@ const App: React.FC = () => {
                 </ProtectedRoute>
               }
             />
+            {/* Redirect root to inventory */}
+            <Route path="/" element={<Navigate to="/inventory" replace />} />
           </Routes>
         </Router>
       </AuthProvider>

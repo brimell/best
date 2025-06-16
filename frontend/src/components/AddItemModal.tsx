@@ -37,7 +37,19 @@ interface Category {
 interface AddItemModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onItemAdded: () => void;
+    onItemAdded: (item: any) => void;
+}
+
+interface FormData {
+    name: string;
+    description: string;
+    category_id: number;
+    quantity: number;
+    condition: string;
+    location: string;
+    image_url: string;
+    new_value: number;
+    resell_value: number;
 }
 
 const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onItemAdded }) => {
@@ -46,17 +58,20 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onItemAdde
     const { token } = useAuth();
     const toast = useToast();
 
-    const [formData, setFormData] = useState({
+    const initialFormData: FormData = {
         name: '',
         description: '',
-        category_id: '',
+        category_id: 0,
         quantity: 1,
-        purchase_price: '',
-        purchase_date: '',
-        condition: '',
+        condition: 'new',
         location: '',
-        image_url: ''
-    });
+        image_url: '',
+        new_value: 0,
+        resell_value: 0
+    };
+
+    const [formData, setFormData] = useState<FormData>(initialFormData);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -81,7 +96,7 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onItemAdde
         }
     }, [isOpen, toast]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({
             ...prev,
@@ -111,7 +126,7 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onItemAdde
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
+        setIsSubmitting(true);
 
         try {
             const response = await fetch('/api/items', {
@@ -120,50 +135,35 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onItemAdde
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({
-                    ...formData,
-                    category_id: parseInt(formData.category_id),
-                    quantity: parseInt(formData.quantity.toString()),
-                    purchase_price: parseFloat(formData.purchase_price)
-                })
+                body: JSON.stringify(formData)
             });
 
             if (!response.ok) {
                 const error = await response.json();
-                throw new Error(error.message || 'Failed to add item');
+                throw new Error(error.error || 'Failed to add item');
             }
 
+            const data = await response.json();
             toast({
-                title: 'Success',
-                description: 'Item added successfully',
+                title: 'Item added successfully',
                 status: 'success',
                 duration: 3000,
-                isClosable: true,
+                isClosable: true
             });
-
-            onItemAdded();
+            onItemAdded(data);
             onClose();
-            setFormData({
-                name: '',
-                description: '',
-                category_id: '',
-                quantity: 1,
-                purchase_price: '',
-                purchase_date: '',
-                condition: '',
-                location: '',
-                image_url: ''
-            });
+            setFormData(initialFormData);
         } catch (error) {
+            console.error('Error adding item:', error);
             toast({
-                title: 'Error',
-                description: error instanceof Error ? error.message : 'Failed to add item',
+                title: 'Error adding item',
+                description: error instanceof Error ? error.message : 'An error occurred',
                 status: 'error',
                 duration: 5000,
-                isClosable: true,
+                isClosable: true
             });
         } finally {
-            setLoading(false);
+            setIsSubmitting(false);
         }
     };
 
@@ -171,17 +171,17 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onItemAdde
         <Modal isOpen={isOpen} onClose={onClose} size="xl">
             <ModalOverlay />
             <ModalContent>
-                <form onSubmit={handleSubmit}>
-                    <ModalHeader>Add New Item</ModalHeader>
-                    <ModalCloseButton />
-                    <ModalBody>
+                <ModalHeader>Add New Item</ModalHeader>
+                <ModalCloseButton />
+                <ModalBody>
+                    <form onSubmit={handleSubmit}>
                         <VStack spacing={4}>
                             <FormControl isRequired>
                                 <FormLabel>Name</FormLabel>
                                 <Input
                                     name="name"
                                     value={formData.name}
-                                    onChange={handleChange}
+                                    onChange={handleInputChange}
                                     placeholder="Enter item name"
                                 />
                             </FormControl>
@@ -191,7 +191,7 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onItemAdde
                                 <Textarea
                                     name="description"
                                     value={formData.description}
-                                    onChange={handleChange}
+                                    onChange={handleInputChange}
                                     placeholder="Enter item description"
                                 />
                             </FormControl>
@@ -201,7 +201,7 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onItemAdde
                                 <Select
                                     name="category_id"
                                     value={formData.category_id}
-                                    onChange={handleChange}
+                                    onChange={handleInputChange}
                                     placeholder="Select category"
                                 >
                                     {renderCategoryOptions(categories)}
@@ -213,7 +213,7 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onItemAdde
                                 <NumberInput
                                     min={1}
                                     value={formData.quantity}
-                                    onChange={(value) => handleNumberChange('quantity', value)}
+                                    onChange={(_, value) => handleInputChange({ target: { name: 'quantity', value } } as any)}
                                 >
                                     <NumberInputField />
                                     <NumberInputStepper>
@@ -221,32 +221,6 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onItemAdde
                                         <NumberDecrementStepper />
                                     </NumberInputStepper>
                                 </NumberInput>
-                            </FormControl>
-
-                            <FormControl isRequired>
-                                <FormLabel>Purchase Price</FormLabel>
-                                <NumberInput
-                                    min={0}
-                                    precision={2}
-                                    value={formData.purchase_price}
-                                    onChange={(value) => handleNumberChange('purchase_price', value)}
-                                >
-                                    <NumberInputField />
-                                    <NumberInputStepper>
-                                        <NumberIncrementStepper />
-                                        <NumberDecrementStepper />
-                                    </NumberInputStepper>
-                                </NumberInput>
-                            </FormControl>
-
-                            <FormControl>
-                                <FormLabel>Purchase Date</FormLabel>
-                                <Input
-                                    type="date"
-                                    name="purchase_date"
-                                    value={formData.purchase_date}
-                                    onChange={handleChange}
-                                />
                             </FormControl>
 
                             <FormControl isRequired>
@@ -254,11 +228,10 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onItemAdde
                                 <Select
                                     name="condition"
                                     value={formData.condition}
-                                    onChange={handleChange}
-                                    placeholder="Select condition"
+                                    onChange={handleInputChange}
                                 >
                                     <option value="new">New</option>
-                                    <option value="like-new">Like New</option>
+                                    <option value="like_new">Like New</option>
                                     <option value="excellent">Excellent</option>
                                     <option value="good">Good</option>
                                     <option value="fair">Fair</option>
@@ -266,13 +239,13 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onItemAdde
                                 </Select>
                             </FormControl>
 
-                            <FormControl>
+                            <FormControl isRequired>
                                 <FormLabel>Location</FormLabel>
                                 <Input
                                     name="location"
                                     value={formData.location}
-                                    onChange={handleChange}
-                                    placeholder="Enter storage location"
+                                    onChange={handleInputChange}
+                                    placeholder="Enter item location"
                                 />
                             </FormControl>
 
@@ -281,27 +254,55 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onItemAdde
                                 <Input
                                     name="image_url"
                                     value={formData.image_url}
-                                    onChange={handleChange}
+                                    onChange={handleInputChange}
                                     placeholder="Enter image URL"
                                 />
                             </FormControl>
-                        </VStack>
-                    </ModalBody>
 
-                    <ModalFooter>
-                        <Button variant="ghost" mr={3} onClick={onClose}>
-                            Cancel
-                        </Button>
-                        <Button
-                            colorScheme="blue"
-                            type="submit"
-                            isLoading={loading}
-                            loadingText="Adding..."
-                        >
-                            Add Item
-                        </Button>
-                    </ModalFooter>
-                </form>
+                            <FormControl isRequired>
+                                <FormLabel>New Value (£)</FormLabel>
+                                <NumberInput
+                                    min={0}
+                                    precision={2}
+                                    value={formData.new_value}
+                                    onChange={(_, value) => handleInputChange({ target: { name: 'new_value', value } } as any)}
+                                >
+                                    <NumberInputField />
+                                    <NumberInputStepper>
+                                        <NumberIncrementStepper />
+                                        <NumberDecrementStepper />
+                                    </NumberInputStepper>
+                                </NumberInput>
+                            </FormControl>
+
+                            <FormControl isRequired>
+                                <FormLabel>Resell Value (£)</FormLabel>
+                                <NumberInput
+                                    min={0}
+                                    precision={2}
+                                    value={formData.resell_value}
+                                    onChange={(_, value) => handleInputChange({ target: { name: 'resell_value', value } } as any)}
+                                >
+                                    <NumberInputField />
+                                    <NumberInputStepper>
+                                        <NumberIncrementStepper />
+                                        <NumberDecrementStepper />
+                                    </NumberInputStepper>
+                                </NumberInput>
+                            </FormControl>
+
+                            <Button
+                                type="submit"
+                                colorScheme="blue"
+                                width="full"
+                                isLoading={isSubmitting}
+                                loadingText="Adding item..."
+                            >
+                                Add Item
+                            </Button>
+                        </VStack>
+                    </form>
+                </ModalBody>
             </ModalContent>
         </Modal>
     );
