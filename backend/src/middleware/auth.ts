@@ -6,8 +6,8 @@ declare global {
     namespace Express {
         interface Request {
             user?: {
-                id: number;
-                username: string;
+                userId: number;
+                is_admin: boolean;
             };
         }
     }
@@ -27,8 +27,8 @@ export const authenticateToken = (
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as {
-            id: number;
-            username: string;
+            userId: number;
+            is_admin: boolean;
         };
         req.user = decoded;
         next();
@@ -36,4 +36,11 @@ export const authenticateToken = (
         console.error('Token verification failed:', error);
         return res.status(403).json({ error: 'Invalid or expired token' });
     }
-}; 
+};
+
+export function isAdmin(req: Request, res: Response, next: NextFunction) {
+    if (req.user && req.user.is_admin) {
+        return next();
+    }
+    return res.status(403).json({ message: 'Admin access required' });
+} 

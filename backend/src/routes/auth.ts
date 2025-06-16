@@ -27,13 +27,13 @@ router.post('/register', async (req, res) => {
 
         // Create new user
         const result = await pool.query(
-            'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username, email',
+            'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username, email, is_admin',
             [username, email, passwordHash]
         );
 
         // Generate JWT
         const token = jwt.sign(
-            { userId: result.rows[0].id },
+            { userId: result.rows[0].id, is_admin: result.rows[0].is_admin },
             process.env.JWT_SECRET || 'your-secret-key',
             { expiresIn: '24h' }
         );
@@ -44,7 +44,8 @@ router.post('/register', async (req, res) => {
             user: {
                 id: result.rows[0].id,
                 username: result.rows[0].username,
-                email: result.rows[0].email
+                email: result.rows[0].email,
+                is_admin: result.rows[0].is_admin
             }
         });
     } catch (error) {
@@ -78,7 +79,7 @@ router.post('/login', async (req, res) => {
 
         // Generate JWT
         const token = jwt.sign(
-            { userId: user.id },
+            { userId: user.id, is_admin: user.is_admin },
             process.env.JWT_SECRET || 'your-secret-key',
             { expiresIn: '24h' }
         );
@@ -89,7 +90,8 @@ router.post('/login', async (req, res) => {
             user: {
                 id: user.id,
                 username: user.username,
-                email: user.email
+                email: user.email,
+                is_admin: user.is_admin
             }
         });
     } catch (error) {
@@ -107,7 +109,7 @@ router.get('/me', authenticateToken, async (req, res) => {
         }
 
         const result = await pool.query(
-            'SELECT id, username, email FROM users WHERE id = $1',
+            'SELECT id, username, email, is_admin FROM users WHERE id = $1',
             [userId]
         );
 
