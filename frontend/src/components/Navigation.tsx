@@ -1,7 +1,7 @@
 import { Box, Flex, Link, Button, HStack, Icon, Text, useColorModeValue } from '@chakra-ui/react';
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { FiHome, FiShoppingBag, FiSettings, FiUser } from 'react-icons/fi';
+import { FiHome, FiShoppingBag, FiSettings, FiUser, FiStar } from 'react-icons/fi';
 
 interface NavItemProps {
   icon: any;
@@ -60,6 +60,7 @@ const Navigation = () => {
   const navItems = [
     { icon: FiHome, label: 'Inventory', path: '/inventory' },
     { icon: FiShoppingBag, label: 'Marketplace', path: '/marketplace' },
+    { icon: FiStar, label: 'Top Rated', path: '/top-rated' },
     { icon: FiUser, label: 'Profile', path: '/profile' },
     { icon: FiSettings, label: 'Settings', path: '/settings' },
   ];
