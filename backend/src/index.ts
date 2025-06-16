@@ -16,6 +16,8 @@ import transactionRoutes from './routes/transactions';
 import ratingRoutes from './routes/ratings';
 import dashboardRoutes from './routes/dashboard';
 import adminRoutes from './routes/admin';
+import templatesRoutes from './routes/templates';
+import listsRoutes from './routes/lists';
 
 dotenv.config();
 
@@ -27,10 +29,18 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // Dummy inventory (in a real app, you'd query a database)
-const inventory = [
-  { id: 1, name: 'Laptop', quantity: 1, category: 'Electronics' },
-  { id: 2, name: 'Desk Chair', quantity: 1, category: 'Furniture' },
-  { id: 3, name: 'Coffee Mug', quantity: 2, category: 'Kitchen' }
+interface InventoryItem {
+  id: number;
+  name: string;
+  quantity: number;
+  category: string;
+  is_listed: boolean;
+}
+
+const inventory: InventoryItem[] = [
+  { id: 1, name: 'Laptop', quantity: 1, category: 'Electronics', is_listed: false },
+  { id: 2, name: 'Desk Chair', quantity: 1, category: 'Furniture', is_listed: false },
+  { id: 3, name: 'Coffee Mug', quantity: 2, category: 'Kitchen', is_listed: false }
 ];
 
 // Dummy marketplace (in a real app, you'd query a database or external API)
@@ -49,6 +59,8 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/ratings', ratingRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/templates', templatesRoutes);
+app.use('/api/lists', listsRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -63,6 +75,17 @@ app.get('/api/inventory', (req: Request, res: Response) => {
 // Endpoint to get marketplace (GET /api/marketplace)
 app.get('/api/marketplace', (req: Request, res: Response) => {
   res.json(marketplace);
+});
+
+// Toggle listing status for an inventory item
+app.post('/api/inventory/:id/toggle-listing', (req: Request, res: Response) => {
+  const itemId = parseInt(req.params.id, 10);
+  const item = inventory.find(i => i.id === itemId);
+  if (!item) {
+    return res.status(404).json({ message: 'Item not found' });
+  }
+  item.is_listed = !item.is_listed;
+  res.json({ id: item.id, is_listed: item.is_listed });
 });
 
 // Start the server

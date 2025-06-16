@@ -33,3 +33,14 @@ declare module '*/routes/ratings' {
     const router: Router;
     export default router;
 } 
+declare module '*/routes/templates' {
+    import { Router } from 'express';
+    const router: Router;
+    export default router;
+}
+
+declare module '*/routes/lists' {
+    import { Router } from 'express';
+    const router: Router;
+    export default router;
+}
