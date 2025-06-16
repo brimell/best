@@ -12,28 +12,35 @@ router.get('/stats', authenticateToken, async (req, res) => {
             return res.status(401).json({ message: 'User not authenticated' });
         }
 
-        // Get total items count
+        // Get total items and listed items
         const itemsResult = await pool.query(
-            'SELECT COUNT(*) as total_items FROM items WHERE user_id = $1',
+            `SELECT 
+                COUNT(*) as total_items,
+                COUNT(DISTINCT CASE WHEN ml.id IS NOT NULL THEN i.id END) as listed_items
+             FROM items i
+             LEFT JOIN marketplace_listings ml ON i.id = ml.item_id AND ml.status = 'active'
+             WHERE i.user_id = $1`,
             [userId]
         );
 
         // Get total value of inventory
         const valueResult = await pool.query(
-            'SELECT COALESCE(SUM(price), 0) as total_value FROM items WHERE user_id = $1',
+            'SELECT COALESCE(SUM(purchase_price * quantity), 0) as total_value FROM items WHERE user_id = $1',
             [userId]
         );
 
         // Get active listings count
         const listingsResult = await pool.query(
-            'SELECT COUNT(*) as active_listings FROM items WHERE user_id = $1 AND is_listed = true',
+            `SELECT COUNT(*) as active_listings 
+             FROM marketplace_listings ml
+             JOIN items i ON ml.item_id = i.id
+             WHERE i.user_id = $1 AND ml.status = 'active'`,
             [userId]
         );
 
-        // Get total views
+        // Get total views (we'll use marketplace listing views if we add them later)
         const viewsResult = await pool.query(
-            'SELECT COALESCE(SUM(view_count), 0) as total_views FROM items WHERE user_id = $1',
-            [userId]
+            'SELECT 0 as total_views'  // Placeholder until we implement view tracking
         );
 
         // Get ratings statistics
@@ -59,12 +66,13 @@ router.get('/stats', authenticateToken, async (req, res) => {
              WHERE i.user_id = $1)
              UNION ALL
              (SELECT 
-                'view' as type,
-                'Item viewed' as description,
-                i.last_viewed_at as timestamp,
-                i.id
-             FROM items i
-             WHERE i.user_id = $1 AND i.last_viewed_at IS NOT NULL)
+                'listing' as type,
+                'New marketplace listing' as description,
+                ml.created_at as timestamp,
+                ml.id
+             FROM marketplace_listings ml
+             JOIN items i ON ml.item_id = i.id
+             WHERE i.user_id = $1)
              ORDER BY timestamp DESC
              LIMIT 10`,
             [userId]
@@ -72,6 +80,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
 
         res.json({
             totalItems: parseInt(itemsResult.rows[0].total_items),
+            totalListedItems: parseInt(itemsResult.rows[0].listed_items),
             totalValue: parseFloat(valueResult.rows[0].total_value),
             activeListings: parseInt(listingsResult.rows[0].active_listings),
             totalViews: parseInt(viewsResult.rows[0].total_views),

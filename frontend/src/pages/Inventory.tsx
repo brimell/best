@@ -23,6 +23,7 @@ import {
     Icon,
     InputGroup,
     InputLeftElement,
+    useDisclosure,
 } from '@chakra-ui/react';
 import { 
     AiOutlinePlus,
@@ -42,6 +43,7 @@ import {
 } from 'react-icons/ai';
 import { useAuth } from '../contexts/AuthContext';
 import Rating from '../components/Rating';
+import AddItemModal from '../components/AddItemModal';
 
 interface InventoryItem {
     id: number;
@@ -65,6 +67,7 @@ const Inventory: React.FC = () => {
     const [sortBy, setSortBy] = useState('name');
     const { token } = useAuth();
     const toast = useToast();
+    const { isOpen, onOpen, onClose } = useDisclosure();
 
     useEffect(() => {
         fetchInventory();
@@ -187,7 +190,7 @@ const Inventory: React.FC = () => {
                     <Button
                         leftIcon={<Icon as={AiOutlinePlus} />}
                         colorScheme="blue"
-                        onClick={() => {/* TODO: Implement add item modal */}}
+                        onClick={onOpen}
                     >
                         Add Item
                     </Button>
@@ -325,6 +328,12 @@ const Inventory: React.FC = () => {
                     </SimpleGrid>
                 )}
             </VStack>
+
+            <AddItemModal
+                isOpen={isOpen}
+                onClose={onClose}
+                onItemAdded={fetchInventory}
+            />
         </Container>
     );
 };

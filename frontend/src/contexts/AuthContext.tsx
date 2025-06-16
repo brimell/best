@@ -65,12 +65,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const initializeAuth = async () => {
       try {
         const storedToken = localStorage.getItem(TOKEN_KEY);
+        console.log('Stored token:', storedToken ? 'exists' : 'not found');
         
         if (storedToken && !isTokenExpired()) {
+          console.log('Token is valid, initializing auth...');
           setToken(storedToken);
           axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
           await validateToken();
         } else {
+          console.log('Token is missing or expired, clearing auth...');
           clearAuthToken();
         }
       } catch (error) {
@@ -86,10 +89,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const validateToken = async () => {
     try {
+      console.log('Validating token...');
       const response = await axios.get('/api/auth/me');
+      console.log('Token validation successful:', response.data);
       setUser(response.data.user);
       setIsAuthenticated(true);
     } catch (error) {
+      console.error('Token validation failed:', error);
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         clearAuthToken();
         setUser(null);
