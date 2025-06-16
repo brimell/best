@@ -19,7 +19,7 @@ import {
     ModalCloseButton,
     ModalFooter,
 } from '@chakra-ui/react';
-import { StarIcon } from '@chakra-ui/icons';
+import { AiFillStar, AiOutlineStar } from 'react-icons/ai';
 import { useAuth } from '../contexts/AuthContext';
 
 interface RatingProps {
@@ -156,7 +156,7 @@ const Rating: React.FC<RatingProps> = ({
                                 transition="transform 0.2s"
                             >
                                 <Icon
-                                    as={StarIcon}
+                                    as={star <= rating ? AiFillStar : AiOutlineStar}
                                     w={6}
                                     h={6}
                                     color={star <= rating ? 'yellow.400' : 'gray.200'}
@@ -197,7 +197,7 @@ const Rating: React.FC<RatingProps> = ({
                                         transition="transform 0.2s"
                                     >
                                         <Icon
-                                            as={StarIcon}
+                                            as={star <= rating ? AiFillStar : AiOutlineStar}
                                             w={8}
                                             h={8}
                                             color={star <= rating ? 'yellow.400' : 'gray.200'}
