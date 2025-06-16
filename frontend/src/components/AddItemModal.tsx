@@ -20,6 +20,10 @@ import {
     NumberInputStepper,
     NumberIncrementStepper,
     NumberDecrementStepper,
+    HStack,
+    Box,
+    Text,
+    Divider,
 } from '@chakra-ui/react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -54,6 +58,7 @@ interface FormData {
 
 const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onItemAdded }) => {
     const [categories, setCategories] = useState<Category[]>([]);
+    const [selectedParentCategory, setSelectedParentCategory] = useState<number | null>(null);
     const [loading, setLoading] = useState(false);
     const { token } = useAuth();
     const toast = useToast();
@@ -96,6 +101,27 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onItemAdde
         }
     }, [isOpen, toast]);
 
+    const parentCategories = categories.filter(cat => cat.level === 1);
+    const childCategories = categories.filter(cat => cat.parent_id === selectedParentCategory);
+
+    const handleParentCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const parentId = e.target.value ? parseInt(e.target.value) : null;
+        setSelectedParentCategory(parentId);
+        // Reset child category selection when parent changes
+        setFormData(prev => ({
+            ...prev,
+            category_id: 0
+        }));
+    };
+
+    const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const categoryId = parseInt(e.target.value);
+        setFormData(prev => ({
+            ...prev,
+            category_id: categoryId
+        }));
+    };
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({
@@ -109,19 +135,6 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onItemAdde
             ...prev,
             [name]: value
         }));
-    };
-
-    const renderCategoryOptions = (categories: Category[], level = 0) => {
-        return categories
-            .filter(cat => cat.level === level)
-            .map(category => (
-                <React.Fragment key={category.id}>
-                    <option value={category.id}>
-                        {'—'.repeat(level)} {category.name}
-                    </option>
-                    {category.has_children && renderCategoryOptions(categories, level + 1)}
-                </React.Fragment>
-            ));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -198,14 +211,41 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onItemAdde
 
                             <FormControl isRequired>
                                 <FormLabel>Category</FormLabel>
-                                <Select
-                                    name="category_id"
-                                    value={formData.category_id}
-                                    onChange={handleInputChange}
-                                    placeholder="Select category"
-                                >
-                                    {renderCategoryOptions(categories)}
-                                </Select>
+                                <VStack spacing={2} align="stretch">
+                                    <Select
+                                        placeholder="Select main category"
+                                        value={selectedParentCategory || ''}
+                                        onChange={handleParentCategoryChange}
+                                    >
+                                        {parentCategories.map(category => (
+                                            <option key={category.id} value={category.id}>
+                                                {category.name}
+                                            </option>
+                                        ))}
+                                    </Select>
+                                    
+                                    {selectedParentCategory && (
+                                        <>
+                                            <Divider />
+                                            <Box>
+                                                <Text fontSize="sm" color="gray.500" mb={2}>
+                                                    Subcategory
+                                                </Text>
+                                                <Select
+                                                    placeholder="Select subcategory"
+                                                    value={formData.category_id || ''}
+                                                    onChange={handleCategoryChange}
+                                                >
+                                                    {childCategories.map(category => (
+                                                        <option key={category.id} value={category.id}>
+                                                            {category.name}
+                                                        </option>
+                                                    ))}
+                                                </Select>
+                                            </Box>
+                                        </>
+                                    )}
+                                </VStack>
                             </FormControl>
 
                             <FormControl isRequired>

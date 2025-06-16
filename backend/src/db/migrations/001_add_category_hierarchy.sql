@@ -10,7 +10,8 @@ CREATE TABLE categories (
     level INTEGER NOT NULL DEFAULT 1,
     path TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(parent_id, name)  -- Ensure unique names within the same parent
 );
 
 -- Create function to update category path
@@ -81,7 +82,7 @@ INSERT INTO categories (name, description) VALUES
     ('Food & Beverage', 'Food items and beverages');
 
 -- Insert Electronics subcategories
-WITH electronics AS (SELECT id FROM categories WHERE name = 'Electronics')
+WITH electronics AS (SELECT id FROM categories WHERE name = 'Electronics' LIMIT 1)
 INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM electronics), 'Computers & Laptops', 'Desktop computers, laptops, and accessories'),
     ((SELECT id FROM electronics), 'Smartphones & Accessories', 'Mobile phones and related accessories'),
@@ -93,7 +94,7 @@ INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM electronics), 'Components', 'Computer and electronic components');
 
 -- Insert Computers & Laptops subcategories
-WITH computers AS (SELECT id FROM categories WHERE name = 'Computers & Laptops')
+WITH computers AS (SELECT id FROM categories WHERE name = 'Computers & Laptops' LIMIT 1)
 INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM computers), 'Desktop Computers', 'Complete desktop systems'),
     ((SELECT id FROM computers), 'Laptops', 'Portable computers'),
@@ -102,7 +103,7 @@ INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM computers), 'Computer Accessories', 'Peripherals and accessories');
 
 -- Insert Furniture subcategories
-WITH furniture AS (SELECT id FROM categories WHERE name = 'Furniture')
+WITH furniture AS (SELECT id FROM categories WHERE name = 'Furniture' LIMIT 1)
 INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM furniture), 'Living Room', 'Sofas, chairs, and living room furniture'),
     ((SELECT id FROM furniture), 'Bedroom', 'Beds, dressers, and bedroom furniture'),
@@ -112,17 +113,17 @@ INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM furniture), 'Storage', 'Cabinets, shelves, and storage solutions');
 
 -- Insert Clothing subcategories
-WITH clothing AS (SELECT id FROM categories WHERE name = 'Clothing')
+WITH clothing AS (SELECT id FROM categories WHERE name = 'Clothing' LIMIT 1)
 INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM clothing), 'Men''s Clothing', 'Men''s apparel and accessories'),
     ((SELECT id FROM clothing), 'Women''s Clothing', 'Women''s apparel and accessories'),
     ((SELECT id FROM clothing), 'Children''s Clothing', 'Kids'' and baby clothing'),
     ((SELECT id FROM clothing), 'Footwear', 'Shoes, boots, and other footwear'),
-    ((SELECT id FROM clothing), 'Accessories', 'Jewelry, bags, and fashion accessories'),
+    ((SELECT id FROM clothing), 'Accessories', 'Clothing accessories and add-ons'),
     ((SELECT id FROM clothing), 'Sportswear', 'Athletic and sports clothing');
 
 -- Insert Books & Media subcategories
-WITH media AS (SELECT id FROM categories WHERE name = 'Books & Media')
+WITH media AS (SELECT id FROM categories WHERE name = 'Books & Media' LIMIT 1)
 INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM media), 'Books', 'Fiction and non-fiction books'),
     ((SELECT id FROM media), 'Movies', 'DVDs and Blu-rays'),
@@ -132,7 +133,7 @@ INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM media), 'Magazines', 'Periodicals and magazines');
 
 -- Insert Sports & Outdoors subcategories
-WITH sports AS (SELECT id FROM categories WHERE name = 'Sports & Outdoors')
+WITH sports AS (SELECT id FROM categories WHERE name = 'Sports & Outdoors' LIMIT 1)
 INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM sports), 'Exercise & Fitness', 'Fitness equipment and accessories'),
     ((SELECT id FROM sports), 'Team Sports', 'Equipment for team sports'),
@@ -142,7 +143,7 @@ INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM sports), 'Winter Sports', 'Skiing and snowboarding equipment');
 
 -- Insert Home & Garden subcategories
-WITH home AS (SELECT id FROM categories WHERE name = 'Home & Garden')
+WITH home AS (SELECT id FROM categories WHERE name = 'Home & Garden' LIMIT 1)
 INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM home), 'Home Decor', 'Decorative items and accessories'),
     ((SELECT id FROM home), 'Kitchen & Dining', 'Kitchen appliances and dining items'),
@@ -152,7 +153,7 @@ INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM home), 'Storage & Organization', 'Storage solutions and organizers');
 
 -- Insert Toys & Games subcategories
-WITH toys AS (SELECT id FROM categories WHERE name = 'Toys & Games')
+WITH toys AS (SELECT id FROM categories WHERE name = 'Toys & Games' LIMIT 1)
 INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM toys), 'Board Games', 'Traditional board games'),
     ((SELECT id FROM toys), 'Video Games', 'Video game consoles and games'),
@@ -162,7 +163,7 @@ INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM toys), 'Outdoor Toys', 'Toys for outdoor play');
 
 -- Insert Collectibles subcategories
-WITH collectibles AS (SELECT id FROM categories WHERE name = 'Collectibles')
+WITH collectibles AS (SELECT id FROM categories WHERE name = 'Collectibles' LIMIT 1)
 INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM collectibles), 'Trading Cards', 'Sports and trading cards'),
     ((SELECT id FROM collectibles), 'Coins & Currency', 'Collectible coins and currency'),
@@ -172,7 +173,7 @@ INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM collectibles), 'Art Prints', 'Limited edition art prints');
 
 -- Insert Jewelry & Watches subcategories
-WITH jewelry AS (SELECT id FROM categories WHERE name = 'Jewelry & Watches')
+WITH jewelry AS (SELECT id FROM categories WHERE name = 'Jewelry & Watches' LIMIT 1)
 INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM jewelry), 'Fine Jewelry', 'Precious metal and gemstone jewelry'),
     ((SELECT id FROM jewelry), 'Fashion Jewelry', 'Costume and fashion jewelry'),
@@ -182,7 +183,7 @@ INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM jewelry), 'Earrings', 'Earrings and ear accessories');
 
 -- Insert Art & Crafts subcategories
-WITH art AS (SELECT id FROM categories WHERE name = 'Art & Crafts')
+WITH art AS (SELECT id FROM categories WHERE name = 'Art & Crafts' LIMIT 1)
 INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM art), 'Art Supplies', 'Paints, brushes, and art materials'),
     ((SELECT id FROM art), 'Craft Supplies', 'Crafting materials and tools'),
@@ -192,7 +193,7 @@ INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM art), 'Knitting & Crochet', 'Yarn and knitting supplies');
 
 -- Insert Automotive subcategories
-WITH auto AS (SELECT id FROM categories WHERE name = 'Automotive')
+WITH auto AS (SELECT id FROM categories WHERE name = 'Automotive' LIMIT 1)
 INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM auto), 'Car Parts', 'Automotive parts and components'),
     ((SELECT id FROM auto), 'Tools & Equipment', 'Automotive tools and equipment'),
@@ -202,7 +203,7 @@ INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM auto), 'Car Care', 'Cleaning and maintenance products');
 
 -- Insert Musical Instruments subcategories
-WITH music AS (SELECT id FROM categories WHERE name = 'Musical Instruments')
+WITH music AS (SELECT id FROM categories WHERE name = 'Musical Instruments' LIMIT 1)
 INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM music), 'String Instruments', 'Guitars, violins, and string instruments'),
     ((SELECT id FROM music), 'Wind Instruments', 'Flutes, saxophones, and wind instruments'),
@@ -212,7 +213,7 @@ INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM music), 'Accessories', 'Instrument accessories and parts');
 
 -- Insert Tools & Equipment subcategories
-WITH tools AS (SELECT id FROM categories WHERE name = 'Tools & Equipment')
+WITH tools AS (SELECT id FROM categories WHERE name = 'Tools & Equipment' LIMIT 1)
 INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM tools), 'Power Tools', 'Electric and power tools'),
     ((SELECT id FROM tools), 'Hand Tools', 'Manual and hand tools'),
@@ -222,7 +223,7 @@ INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM tools), 'Tool Storage', 'Tool storage and organization');
 
 -- Insert Health & Beauty subcategories
-WITH health AS (SELECT id FROM categories WHERE name = 'Health & Beauty')
+WITH health AS (SELECT id FROM categories WHERE name = 'Health & Beauty' LIMIT 1)
 INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM health), 'Skincare', 'Skin care products and treatments'),
     ((SELECT id FROM health), 'Hair Care', 'Hair care products and accessories'),
@@ -232,7 +233,7 @@ INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM health), 'Personal Care', 'Personal hygiene products');
 
 -- Insert Food & Beverage subcategories
-WITH food AS (SELECT id FROM categories WHERE name = 'Food & Beverage')
+WITH food AS (SELECT id FROM categories WHERE name = 'Food & Beverage' LIMIT 1)
 INSERT INTO categories (parent_id, name, description) VALUES
     ((SELECT id FROM food), 'Gourmet Foods', 'Specialty and gourmet food items'),
     ((SELECT id FROM food), 'Beverages', 'Drinks and beverages'),

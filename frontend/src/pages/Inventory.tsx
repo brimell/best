@@ -60,12 +60,25 @@ interface InventoryItem {
     description: string;
     price: number;
     condition: string;
-    category: string;
+    category_id: number;
+    category_name: string;
+    category_path: string;
     image_url: string | null;
     average_rating: number;
     total_ratings: number;
     is_listed: boolean;
     price_point_category_id: number;
+}
+
+interface Category {
+    id: number;
+    parent_id: number | null;
+    name: string;
+    description: string;
+    level: number;
+    path: string;
+    name_path: string[];
+    has_children: boolean;
 }
 
 interface InventoryStats {
@@ -78,6 +91,7 @@ interface InventoryStats {
 
 const Inventory: React.FC = () => {
     const [items, setItems] = useState<InventoryItem[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('');
@@ -93,10 +107,29 @@ const Inventory: React.FC = () => {
         avg_want_rating: 0,
         avg_need_rating: 0
     });
+    const [selectedParentCategory, setSelectedParentCategory] = useState<number | null>(null);
 
     useEffect(() => {
         fetchInventory();
+        fetchCategories();
     }, []);
+
+    const fetchCategories = async () => {
+        try {
+            const response = await fetch('/api/categories');
+            if (!response.ok) throw new Error('Failed to fetch categories');
+            const data = await response.json();
+            setCategories(data);
+        } catch (error) {
+            toast({
+                title: 'Error',
+                description: 'Failed to load categories',
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
+        }
+    };
 
     const fetchInventory = async () => {
         try {
@@ -218,10 +251,29 @@ const Inventory: React.FC = () => {
         }
     };
 
+    const parentCategories = categories.filter(cat => cat.level === 1);
+    const childCategories = categories.filter(cat => cat.parent_id === selectedParentCategory);
+
+    const handleParentCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const parentId = e.target.value ? parseInt(e.target.value) : null;
+        setSelectedParentCategory(parentId);
+        setCategoryFilter(''); // Reset category filter when parent changes
+    };
+
+    const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setCategoryFilter(e.target.value);
+    };
+
+    const getCategoryPath = (item: InventoryItem) => {
+        const category = categories.find(cat => cat.id === item.category_id);
+        if (!category) return item.category_name;
+        return category.name_path.join(' > ');
+    };
+
     const filteredItems = items
         .filter(item => 
             item.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-            (categoryFilter === '' || item.category === categoryFilter)
+            (categoryFilter === '' || item.category_id.toString() === categoryFilter)
         )
         .sort((a, b) => {
             switch (sortBy) {
@@ -235,8 +287,6 @@ const Inventory: React.FC = () => {
                     return 0;
             }
         });
-
-    const categories = Array.from(new Set(items.map(item => item.category)));
 
     return (
         <Container maxW="container.xl" py={8}>
@@ -313,19 +363,34 @@ const Inventory: React.FC = () => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </InputGroup>
-                    <Select
-                        value={categoryFilter}
-                        onChange={(e) => setCategoryFilter(e.target.value)}
-                        placeholder="All Categories"
-                        w="200px"
-                        icon={<Icon as={AiOutlineFilter} />}
-                    >
-                        {categories.map(category => (
-                            <option key={category} value={category}>
-                                {category}
-                            </option>
-                        ))}
-                    </Select>
+                    <VStack spacing={2} align="stretch" minW="300px">
+                        <Select
+                            placeholder="All Categories"
+                            value={selectedParentCategory || ''}
+                            onChange={handleParentCategoryChange}
+                            icon={<Icon as={AiOutlineFilter} />}
+                        >
+                            {parentCategories.map(category => (
+                                <option key={category.id} value={category.id}>
+                                    {category.name}
+                                </option>
+                            ))}
+                        </Select>
+                        {selectedParentCategory && (
+                            <Select
+                                placeholder="All Subcategories"
+                                value={categoryFilter}
+                                onChange={handleCategoryChange}
+                                icon={<Icon as={AiOutlineFilter} />}
+                            >
+                                {childCategories.map(category => (
+                                    <option key={category.id} value={category.id.toString()}>
+                                        {category.name}
+                                    </option>
+                                ))}
+                            </Select>
+                        )}
+                    </VStack>
                     <Select
                         value={sortBy}
                         onChange={(e) => setSortBy(e.target.value)}
@@ -348,93 +413,89 @@ const Inventory: React.FC = () => {
                 ) : (
                     <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
                         {filteredItems.map(item => (
-                            <Box
-                                key={item.id}
-                                borderWidth="1px"
-                                borderRadius="lg"
-                                overflow="hidden"
-                                p={4}
-                            >
-                                <VStack align="stretch" spacing={4}>
-                                    {item.image_url && (
-                                        <Image
-                                            src={item.image_url}
-                                            alt={item.name}
-                                            height="200px"
-                                            objectFit="cover"
-                                            borderRadius="md"
-                                        />
-                                    )}
-                                    <Heading size="md">{item.name}</Heading>
-                                    <Text>{item.description}</Text>
-                                    <HStack>
-                                        <Badge colorScheme="blue">
-                                            <HStack spacing={1}>
-                                                <Icon as={AiOutlineTag} />
-                                                <Text>{item.category}</Text>
-                                            </HStack>
-                                        </Badge>
-                                        <Badge colorScheme="purple">
-                                            <HStack spacing={1}>
-                                                <Icon as={AiOutlineEye} />
-                                                <Text>{item.condition}</Text>
-                                            </HStack>
-                                        </Badge>
-                                        {item.is_listed && (
-                                            <Badge colorScheme="green">
+                            <Card key={item.id}>
+                                <CardBody>
+                                    <VStack align="stretch" spacing={4}>
+                                        {item.image_url && (
+                                            <Image
+                                                src={item.image_url}
+                                                alt={item.name}
+                                                height="200px"
+                                                objectFit="cover"
+                                                borderRadius="md"
+                                            />
+                                        )}
+                                        <Heading size="md">{item.name}</Heading>
+                                        <Text>{item.description}</Text>
+                                        <HStack>
+                                            <Badge colorScheme="blue">
                                                 <HStack spacing={1}>
-                                                    <Icon as={AiOutlineCheckCircle} />
-                                                    <Text>Listed</Text>
+                                                    <Icon as={AiOutlineTag} />
+                                                    <Text>{getCategoryPath(item)}</Text>
                                                 </HStack>
                                             </Badge>
-                                        )}
-                                    </HStack>
-                                    <HStack>
-                                        <Icon as={AiOutlineDollar} />
-                                        <Text fontWeight="bold">${(item.price ?? 0).toFixed(2)}</Text>
-                                    </HStack>
-                                    {item.average_rating > 0 && (
-                                        <Rating
-                                            itemId={item.id}
-                                            averageRating={item.average_rating}
-                                            totalRatings={item.total_ratings}
-                                            pricePointCategoryId={item.price_point_category_id}
-                                            onRatingChange={() => fetchInventory()}
-                                        />
-                                    )}
-                                    <Flex>
-                                        <Spacer />
-                                        <Menu>
-                                            <MenuButton
-                                                as={IconButton}
-                                                icon={<Icon as={AiOutlineDown} />}
-                                                variant="ghost"
-                                                size="sm"
+                                            <Badge colorScheme="purple">
+                                                <HStack spacing={1}>
+                                                    <Icon as={AiOutlineEye} />
+                                                    <Text>{item.condition}</Text>
+                                                </HStack>
+                                            </Badge>
+                                            {item.is_listed && (
+                                                <Badge colorScheme="green">
+                                                    <HStack spacing={1}>
+                                                        <Icon as={AiOutlineCheckCircle} />
+                                                        <Text>Listed</Text>
+                                                    </HStack>
+                                                </Badge>
+                                            )}
+                                        </HStack>
+                                        <HStack>
+                                            <Icon as={AiOutlineDollar} />
+                                            <Text fontWeight="bold">${(item.price ?? 0).toFixed(2)}</Text>
+                                        </HStack>
+                                        {item.average_rating > 0 && (
+                                            <Rating
+                                                itemId={item.id}
+                                                averageRating={item.average_rating}
+                                                totalRatings={item.total_ratings}
+                                                pricePointCategoryId={item.price_point_category_id}
+                                                onRatingChange={() => fetchInventory()}
                                             />
-                                            <MenuList>
-                                                <MenuItem
-                                                    icon={<Icon as={AiOutlineEdit} />}
-                                                    onClick={() => {/* TODO: Implement edit modal */}}
-                                                >
-                                                    Edit
-                                                </MenuItem>
-                                                <MenuItem
-                                                    icon={<Icon as={AiOutlineDelete} />}
-                                                    onClick={() => handleDelete(item.id)}
-                                                >
-                                                    Delete
-                                                </MenuItem>
-                                                <MenuItem
-                                                    icon={<Icon as={item.is_listed ? AiOutlineCloseCircle : AiOutlineShoppingCart} />}
-                                                    onClick={() => handleToggleListing(item.id, item.is_listed)}
-                                                >
-                                                    {item.is_listed ? 'Unlist Item' : 'List Item'}
-                                                </MenuItem>
-                                            </MenuList>
-                                        </Menu>
-                                    </Flex>
-                                </VStack>
-                            </Box>
+                                        )}
+                                        <Flex>
+                                            <Spacer />
+                                            <Menu>
+                                                <MenuButton
+                                                    as={IconButton}
+                                                    icon={<Icon as={AiOutlineDown} />}
+                                                    variant="ghost"
+                                                    size="sm"
+                                                />
+                                                <MenuList>
+                                                    <MenuItem
+                                                        icon={<Icon as={AiOutlineEdit} />}
+                                                        onClick={() => {/* TODO: Implement edit modal */}}
+                                                    >
+                                                        Edit
+                                                    </MenuItem>
+                                                    <MenuItem
+                                                        icon={<Icon as={AiOutlineDelete} />}
+                                                        onClick={() => handleDelete(item.id)}
+                                                    >
+                                                        Delete
+                                                    </MenuItem>
+                                                    <MenuItem
+                                                        icon={<Icon as={item.is_listed ? AiOutlineCloseCircle : AiOutlineShoppingCart} />}
+                                                        onClick={() => handleToggleListing(item.id, item.is_listed)}
+                                                    >
+                                                        {item.is_listed ? 'Unlist Item' : 'List Item'}
+                                                    </MenuItem>
+                                                </MenuList>
+                                            </Menu>
+                                        </Flex>
+                                    </VStack>
+                                </CardBody>
+                            </Card>
                         ))}
                     </SimpleGrid>
                 )}
